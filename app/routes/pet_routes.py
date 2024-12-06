@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, abort, make_response
+from flask import Blueprint, request, abort, make_response
 from ..db import db
 from ..models.pet import Pet
 
@@ -16,6 +16,7 @@ def create_pet():
     
     except KeyError as e:
         abort(make_response({"message": f"missing required value: {e}"}, 400))
+
 
 @bp.get("")
 def get_pets():
