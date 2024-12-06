@@ -27,12 +27,12 @@ def get_pets():
     for pet in pets:
         response.append(pet.to_dict())
 
-    return jsonify(response)
+    return response
 
 @bp.get("/<pet_id>")
-def get_single_cat(pet_id):
-    cat = validate_model(Pet,pet_id)
-    return cat.to_dict()
+def get_single_pet(pet_id):
+    pet = validate_model(Pet,pet_id)
+    return pet.to_dict()
 
 def validate_model(cls,id):
     try:
