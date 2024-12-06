@@ -28,3 +28,23 @@ def get_pets():
         response.append(pet.to_dict())
 
     return jsonify(response)
+
+@bp.get("/<pet_id>")
+def get_single_cat(pet_id):
+    cat = validate_model(Pet,pet_id)
+    return cat.to_dict()
+
+def validate_model(cls,id):
+    try:
+        id = int(id)
+    except:
+        response =  response = {"message": f"{cls.__name__} {id} invalid"}
+        abort(make_response(response , 400))
+
+    query = db.select(cls).where(cls.id == id)
+    model = db.session.scalar(query)
+    if model:
+        return model
+
+    response = {"message": f"{cls.__name__} {id} not found"}
+    abort(make_response(response, 404))
