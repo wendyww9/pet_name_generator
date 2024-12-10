@@ -22,6 +22,19 @@ def create_pet():
     except KeyError as e:
         abort(make_response({"message": f"missing required value: {e}"}, 400))
 
+@bp.patch("/<pet_id>")
+def update_pet_name(pet_id):
+    pet = validate_model(Pet, pet_id)
+    pet_dict = pet.to_dict()
+    new_name = generate_name(pet_dict)
+
+    pet.name = new_name
+    db.session.add(pet)
+    db.session.commit()
+
+    return pet_dict, 201
+
+
 
 @bp.get("")
 def get_pets():
@@ -42,9 +55,14 @@ def get_single_pet(pet_id):
 
 def generate_name(request):
     model = genai.GenerativeModel("gemini-1.5-flash")
-    input_message = f"I have a {request["animal"]} who is {request["coloration"]} and {request["personality"]}. Pleas give me a name for them? Just the name, nothing else."
+
+    if request["name"]:
+        input_message = f"I have a {request["coloration"]} {request["animal"]} named {request["name"]}. They are very {request["personality"]}. I'm not a huge fan of the name though, could you suggest another? Just the name, nothing else."
+    else:
+        input_message = f"I have a {request["animal"]} who is {request["coloration"]} and {request["personality"]}. Please give me a name for them? Just the name, nothing else."
 
     response = model.generate_content(input_message)
+    print(response.text)
     return response.text.strip()
 
 def validate_model(cls,id):
