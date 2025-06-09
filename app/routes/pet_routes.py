@@ -1,12 +1,26 @@
 from flask import Blueprint, request, abort, make_response
 from ..db import db
 from ..models.pet import Pet
+from google import genai
+import os
 
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 bp = Blueprint("pets", __name__, url_prefix="/pets")
 
 @bp.post("")
 def create_pet():
-    pass
+    request_body = request.get_json()
+    request_body["name"] = generate_names(request_body)
+    try: 
+        new_pet = Pet.from_dict(request_body)
+        db.session.add(new_pet)
+        db.session.commit()
+
+        return new_pet.to_dict(), 201
+    
+    except KeyError as e:
+        abort(make_response({"message": f"missing required value: {e}"}, 400))
+
 
 @bp.get("")
 def get_pets():
@@ -24,6 +38,21 @@ def get_pets():
 def get_single_pet(pet_id):
     pet = validate_model(Pet,pet_id)
     return pet.to_dict()
+
+def generate_names(request_body):
+    input_message = (
+        f"I need to come up with a pet name. "
+        f"The pet species is a {request_body['coloration']} {request_body['animal']} "
+        f"and has a personality {request_body['personality']}. "
+        "Just return one name based on species, color and personality."
+    )
+    response = client.models.generate_content(
+    model='gemini-1.5-flash',
+    contents=input_message
+)
+
+    return response.text.strip("\n")
+
 
 def validate_model(cls,id):
     try:
